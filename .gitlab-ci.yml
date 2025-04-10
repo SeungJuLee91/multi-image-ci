@@ -1,0 +1,26 @@
+variables:
+  IMAGES: "nginx node python alpine"  # 빌드할 이미지 목록
+
+image: docker:19.03                    # 도커 클라이언트 이미지 버전
+services:
+  - docker:19.03-dind                  # Docker-in-Docker 서비스
+
+build-and-scan:
+  stage: build                         # GitLab CI의 build 단계
+  script:
+    - |
+      # twistcli 바이너리 다운로드 및 실행 권한 부여
+      wget --header "Authorization: Basic $(echo -n $PCC_USER:$PCC_PASS | base64 | tr -d '\n')" "$PCC_CONSOLE_URL/api/v1/util/twistcli"
+      chmod a+x ./twistcli
+
+      # 각 이미지 디렉토리 순회하면서 빌드 및 스캔 수행
+      for IMAGE in $IMAGES; do
+        IMAGE_NAME="custom-${IMAGE}:${CI_COMMIT_SHORT_SHA}"   # 커밋 SHA를 포함한 태그로 이미지 이름 정의
+        docker build -t "$IMAGE_NAME" "$CI_PROJECT_DIR/$IMAGE"  # 이미지 빌드
+        ./twistcli images scan \
+          --docker-address http://docker:2375 \
+          --address "$PCC_CONSOLE_URL" \
+          --user "$PCC_USER" \
+          --password "$PCC_PASS" \
+          --details "$IMAGE_NAME"
+      done
