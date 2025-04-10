@@ -1,49 +1,33 @@
-# 환경 변수 정의: 사용할 이미지, 도커 호스트, 도커 드라이버 등을 설정합니다.
 variables:
-  IMAGES: "nginx node python alpine"  # 사용할 이미지 리스트 정의
-  DOCKER_HOST: unix:///var/run/docker.sock  # 도커 호스트 주소 설정
-  DOCKER_DRIVER: overlay2  # 도커 드라이버 설정
+  IMAGES: "nginx node python alpine"  # 빌드하고 스캔할 이미지들
+  DOCKER_HOST: unix:///var/run/docker.sock  # Docker 호스트 주소
+  DOCKER_DRIVER: overlay2  # Docker에서 사용하는 스토리지 드라이버
 
-# 사용할 도커 이미지 정의: 도커 실행 환경으로 `docker:19.03` 이미지를 사용합니다.
-image: docker:19.03
+image: docker:19.03  # CI 파이프라인에서 사용할 Docker 19.03 이미지
 
-# 도커 서비스 설정: `docker:19.03-dind` 서비스 실행하여 Docker-in-Docker 환경을 설정합니다.
 services:
-  - name: docker:19.03-dind  # Docker-in-Docker 서비스 사용
-    alias: docker  # 서비스 이름을 `docker`로 설정
-    command: ["--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]  # 도커 명령어 설정
+  - name: docker:19.03-dind  # Docker-in-Docker 서비스
+    alias: docker  # Docker 서비스에 대한 별칭
+    command: ["--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]  # Docker API를 TCP와 Unix 소켓에서 노출
 
-# 빌드 및 스캔 단계 설정: 이미지 빌드 및 취약점 스캔을 실행하는 작업을 정의합니다.
 build-and-scan:
-  stage: build  # `build`라는 이름의 스테이지에서 실행
+  stage: build  # CI 파이프라인의 빌드 단계
   script:
-    # 도커 정보 확인: 도커의 현재 상태를 출력합니다.
-    - docker info
-
-    # 지정된 IP 주소를 /etc/hosts에 추가하여, 커스텀 도메인 이름과 IP를 연결합니다.
-    - echo "192.168.20.200 uber.cwpp.com" >> /etc/hosts
-
-    # twistcli 다운로드 및 실행 준비
+    - docker info  # Docker 정보 출력
+    - echo "192.168.20.200 uber.cwpp.com" >> /etc/hosts  # 외부 접근을 위한 /etc/hosts에 주소 추가
     - |
-      # 인증 헤더를 추가하여 twistcli를 다운로드합니다.
+      # Twistcli 도구를 다운로드
       wget --no-check-certificate --header "Authorization: Basic $(echo -n $PCC_USER:$PCC_PASS | base64 | tr -d '\n')" "$PCC_CONSOLE_URL/api/v1/util/twistcli"
-      
-      # 다운로드한 twistcli에 실행 권한을 부여합니다.
-      chmod a+x ./twistcli
+      chmod a+x ./twistcli  # twistcli 실행 가능하게 설정
 
-      # 지정된 모든 이미지를 반복하여 빌드 및 취약점 스캔을 수행합니다.
+      # 각 이미지를 빌드하고 스캔하는 반복문
       for IMAGE in $IMAGES; do
-        # 각 이미지의 이름을 커밋 해시와 함께 설정합니다.
-        IMAGE_NAME="custom-${IMAGE}:${CI_COMMIT_SHORT_SHA}"
-        
-        # 이미지 빌드를 실행합니다.
-        docker build -t "$IMAGE_NAME" "$CI_PROJECT_DIR/$IMAGE"
-        
-        # twistcli를 사용하여 빌드된 이미지를 취약점 스캔합니다.
+        IMAGE_NAME="custom-${IMAGE}:${CI_COMMIT_SHORT_SHA}"  # 커밋의 짧은 SHA로 이미지를 태그
+        docker build -t "$IMAGE_NAME" "$CI_PROJECT_DIR/$IMAGE"  # Docker 이미지 빌드
         ./twistcli images scan \
-          --docker-address unix:///var/run/docker.sock \  # 도커 주소
-          --address "$PCC_CONSOLE_URL" \  # Prisma Cloud Console 주소
-          --user "$PCC_USER" \  # Prisma Cloud 사용자 이름
-          --password "$PCC_PASS" \  # Prisma Cloud 비밀번호
-          --details "$IMAGE_NAME"  # 스캔할 이미지 이름
+          --docker-address unix:///var/run/docker.sock \
+          --address "$PCC_CONSOLE_URL" \
+          --user "$PCC_USER" \
+          --password "$PCC_PASS" \
+          --details "$IMAGE_NAME"  # Twistcli로 이미지 스캔
       done
