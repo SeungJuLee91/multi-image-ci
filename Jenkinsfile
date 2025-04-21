@@ -28,16 +28,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            echo '🧹 파이프라인 종료. 정리 중...'
-        }
-        success {
-            echo '✅ Build was successful!'
-        }
-        failure {
-            echo '❌ Build failed.'
-        }
-    }
 }
