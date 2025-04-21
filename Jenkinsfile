@@ -24,12 +24,15 @@ pipeline {
                         def tag = "custom-${image}:${env.BUILD_ID}"
                         def buildContext = "${env.WORKSPACE}/${image}"
 
-                        // Docker 빌드
-                        sh "docker build -t ${tag} ${buildContext}"
+                        // 이미지 빌드
+                        sh """
+                            docker build -t ${tag} ${buildContext}
+                        """
 
-                        // Prisma Cloud 스캔
+                        // Prisma Cloud 이미지 스캔
                         prismaCloudScanImage(
-                            image: tag
+                            image: tag,
+                            dockerAddress: 'unix:///var/run/docker.sock'
                         )
                     }
                 }
