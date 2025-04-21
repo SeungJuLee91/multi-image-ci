@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_LIST = "nginx" // 테스트용 이미지
-    }
+    } 
 
     stages {
         stage('Docker Connection Test') {
