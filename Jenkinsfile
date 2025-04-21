@@ -5,7 +5,7 @@ pipeline {
         IMAGE_LIST = "nginx" // 테스트용 이미지
     } 
 
-    stages {
+    stages { 
         stage('Docker Connection Test') {
             steps {
                 sh '''
