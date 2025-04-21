@@ -1,6 +1,6 @@
 pipeline {
     agent any
-
+ 
     environment {
         IMAGE_LIST = "nginx node python alpine"
     }
