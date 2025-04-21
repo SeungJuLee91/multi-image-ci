@@ -9,9 +9,9 @@ pipeline {
         stage('Docker Connection Test') {
             steps {
                 sh '''
-                    echo "=== Current User Info ==="
+                    echo '=== Current User Info ==='
                     id
-                    echo "=== Docker Info ==="
+                    echo '=== Docker Info ==='
                     docker info
                 '''
             }
@@ -24,9 +24,12 @@ pipeline {
                         def tag = "custom-${image}:${env.BUILD_ID}"
                         def buildContext = "${env.WORKSPACE}/${image}"
 
+                        // Docker 빌드
+                        sh "docker build -t ${tag} ${buildContext}"
+
+                        // Prisma Cloud 스캔
                         prismaCloudScanImage(
-                            image: tag,
-                            dockerfilePath: buildContext
+                            image: tag
                         )
                     }
                 }
