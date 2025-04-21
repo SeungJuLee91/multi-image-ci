@@ -30,10 +30,6 @@ pipeline {
                             twistcli images scan \\
                                 --docker-address unix:///var/run/docker.sock \\
                                 --address https://a79b177c21e6f47d28b5b8ec37062fd1-1993644220.us-east-1.elb.amazonaws.com:8083 \\
-                                --user ${PRISMA_USER} \\
-                                --password ${PRISMA_PASS} \\
-                                --details \\
-                                ${tag}
                         """
                     }
                 }
