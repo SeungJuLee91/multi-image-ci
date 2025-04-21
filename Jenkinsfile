@@ -1,6 +1,15 @@
 pipeline {
     agent any
-
+stages {
+        stage('Docker Connection Test') {
+            steps {
+                script {
+                    sh 'id'
+                    sh 'docker info'
+                }
+            }
+        }
+    }
     environment {
         IMAGE_LIST = "nginx node python alpine"  // 빌드하고 스캔할 이미지 디렉토리 목록
     }
