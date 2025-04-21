@@ -17,18 +17,16 @@ pipeline {
                         def tag = "custom-${image}:${env.BUILD_ID}"
                         // 각 이미지에 해당하는 Dockerfile 디렉토리 경로 설정
                         def context = "${env.WORKSPACE}/${image}"
-
                         // 도커 이미지 빌드 수행
-                        sh """
-                            docker build -t ${tag} ${context}
-                        """
-
+                        sh "docker build -t ${tag} ${context}"
                         // Prisma Cloud 이미지 보안 스캔 수행
+
                         prismaCloudScanImage(
                             //스캔 이미지
                             image: tag,
                             //도커 데몬 주소 지정
                             dockerAddress: 'unix:///var/run/docker.sock',
+                            //이미지 수정 시간과 상관없이 항상 스캔하기위한 옵션
                             ignoreImageBuildTime: true
                         )
                     }
