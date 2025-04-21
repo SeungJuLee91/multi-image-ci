@@ -27,7 +27,7 @@ pipeline {
                             //도커 데몬 주소 지정
                             dockerAddress: 'unix:///var/run/docker.sock',
                             //이미지 수정 시간과 상관없이 항상 스캔하기위한 옵션
-                            ignoreImageBuildTime: true
+                            ignoreImageBuildTime: true,
                             //이미지 스캔 결과 출력
                             details: true
                         )
