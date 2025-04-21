@@ -2,35 +2,27 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_LIST = "nginx" // 테스트용 이미지
-    } 
+        IMAGE_LIST = "nginx node python alpine"
+    }
 
-    stages { 
-        stage('Docker Connection Test') {
-            steps {
-                sh '''
-                    echo '=== Current User Info ==='
-                    id
-                    echo '=== Docker Info ==='
-                    docker info
-                '''
-            }
-        }
-
-        stage('Prisma Cloud Scan Images') {
+    stages {
+        stage('Build & Scan Images') {
             steps {
                 script {
                     IMAGE_LIST.split().each { image ->
                         def tag = "custom-${image}:${env.BUILD_ID}"
-                        def buildContext = "${env.WORKSPACE}/${image}"
+                        def context = "${env.WORKSPACE}/${image}"
 
-                        // 이미지 빌드 + 스캔 순차 실행
                         sh """
-                            docker build -t ${tag} ${buildContext}
-                            twistcli images scan \\
-                                --docker-address unix:///var/run/docker.sock \\
-                                --address https://a79b177c21e6f47d28b5b8ec37062fd1-1993644220.us-east-1.elb.amazonaws.com:8083 \\
+                            echo "🛠️ Building image: ${tag}"
+                            docker build -t ${tag} ${context}
                         """
+
+                        prismaCloudScanImage(
+                            image: tag,
+                            dockerAddress: 'unix:///var/run/docker.sock',
+                            ignoreImageBuildTime: true
+                        )
                     }
                 }
             }
@@ -39,7 +31,13 @@ pipeline {
 
     post {
         always {
-            echo '파이프라인 종료. 정리 중...'
+            echo '🧹 파이프라인 종료. 정리 중...'
+        }
+        success {
+            echo '✅ Build was successful!'
+        }
+        failure {
+            echo '❌ Build failed.'
         }
     }
 }
