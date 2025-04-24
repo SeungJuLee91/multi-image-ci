@@ -30,7 +30,15 @@ pipeline {
                             ignoreImageBuildTime: true,
                             resultsFile: 'prisma-cloud-scan-results.json'
                         )
-                        sh "cat prisma-cloud-scan-results.json"
+                         sh """
+                            echo '🧪 Vulnerability Summary for ${tag} 👉'
+                            if command -v jq >/dev/null 2>&1; then
+                                jq '.vulnerabilities | group_by(.severity) | map({(.[0].severity): length}) | add' ${resultFile}
+                            else
+                                grep -o 'severity\":\"[A-Z]*' ${resultFile} | cut -d '"' -f2 | sort | uniq -c
+                            fi
+                            echo ''
+                        """
                     }
                 }
             }
