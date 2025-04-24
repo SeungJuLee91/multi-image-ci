@@ -30,6 +30,7 @@ pipeline {
                             ignoreImageBuildTime: true,
                             resultsFile: 'prisma-cloud-scan-results.json'
                         )
+                        sh "cat prisma-cloud-scan-results.json"
                     }
                 }
             }
