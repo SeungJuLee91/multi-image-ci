@@ -28,8 +28,10 @@ pipeline {
                             dockerAddress: 'unix:///var/run/docker.sock',
                             //이미지 수정 시간과 상관없이 항상 스캔하기위한 옵션
                             ignoreImageBuildTime: true,
+                            //파일로 저장
                             resultsFile: 'prisma-cloud-scan-results.json'
                         )
+                        //저장 파일 내용 게시
                          sh "cat prisma-cloud-scan-results.json"
                     }
                 }
