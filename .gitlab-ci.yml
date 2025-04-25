@@ -13,7 +13,6 @@ services:
 build-and-scan:
   stage: build  # CI 파이프라인의 빌드 단계
   script:
-    - docker info  # Docker 정보 출력
     - echo "192.168.20.200 uber.cwpp.com" >> /etc/hosts  # 외부 접근을 위한 /etc/hosts에 주소 추가
     - |
       # Twistcli 도구를 다운로드
