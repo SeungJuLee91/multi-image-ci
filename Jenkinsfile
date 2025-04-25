@@ -23,7 +23,7 @@ pipeline {
 
                         prismaCloudScanImage( 
                             //스캔 이미지
-                            image: tag,
+                            image: custom-nginx:23,
                             //도커 데몬 주소 지정
                             dockerAddress: 'unix:///var/run/docker.sock',
                             //이미지 수정 시간과 상관없이 항상 스캔하기위한 옵션
