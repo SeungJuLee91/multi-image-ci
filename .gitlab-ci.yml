@@ -1,42 +1,33 @@
-pipeline {
-    agent any
+variables:
+  IMAGES: "nginx node python alpine"  # 빌드하고 스캔할 이미지들
+  DOCKER_HOST: unix:///var/run/docker.sock  # Docker 호스트 주소
+  DOCKER_DRIVER: overlay2  # Docker에서 사용하는 스토리지 드라이버
 
-    environment {
-        IMAGES = "nginx node python alpine"
-    }
+image: docker:19.03  # CI 파이프라인에서 사용할 Docker 19.03 이미지
 
-    stages {
-        stage('Download & Scan with TwistCLI') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'PCC_USER', variable: 'PCC_USER'),
-                    string(credentialsId: 'PCC_PASS', variable: 'PCC_PASS'),
-                    string(credentialsId: 'PCC_CONSOLE_URL', variable: 'PCC_CONSOLE_URL')
-                ]) {
-                    script {
-                        sh '''
-                            echo "🔐 AUTH TEST - $PCC_USER @ $PCC_CONSOLE_URL"
-                            BASIC_AUTH=$(echo -n "$PCC_USER:$PCC_PASS" | base64 | tr -d '\n')
-                            wget --no-check-certificate --header "Authorization: Basic $BASIC_AUTH" "$PCC_CONSOLE_URL/api/v1/util/twistcli"
-                            chmod a+x ./twistcli
+services:
+  - name: docker:19.03-dind  # Docker-in-Docker 서비스
+    alias: docker  # Docker 서비스에 대한 별칭
+    command: ["--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]  # Docker API를 TCP와 Unix 소켓에서 노출
 
-                            for IMAGE in $IMAGES; do
-                                TAG="custom-${IMAGE}:${BUILD_ID}"
-                                docker build -t "$TAG" "$WORKSPACE/$IMAGE"
+build-and-scan:
+  stage: build  # CI 파이프라인의 빌드 단계
+  script:
 
-                                echo "🔎 Scanning image: $TAG"
-                                ./twistcli images scan \
-                                    --docker-address unix:///var/run/docker.sock \
-                                    --address "$PCC_CONSOLE_URL" \
-                                    --user "$PCC_USER" \
-                                    --password "$PCC_PASS" \
-                                    --details \
-                                    "$TAG"
-                            done
-                        '''
-                    }
-                }
-            }
-        }
-    }
-}
+    - echo "192.168.20.200 uber.cwpp.com" >> /etc/hosts  # 외부 접근을 위한 /etc/hosts에 주소 추가
+    - |
+      # Twistcli 도구를 다운로드
+      wget --no-check-certificate --header "Authorization: Basic $(echo -n $PCC_USER:$PCC_PASS | base64 | tr -d '\n')" "$PCC_CONSOLE_URL/api/v1/util/twistcli"
+      chmod a+x ./twistcli  # twistcli 실행 가능하게 설정
+
+      # 각 이미지를 빌드하고 스캔하는 반복문
+      for IMAGE in $IMAGES; do
+        IMAGE_NAME="custom-${IMAGE}:${CI_COMMIT_SHORT_SHA}"  # 커밋의 짧은 SHA로 이미지를 태그
+        docker build -t "$IMAGE_NAME" "$CI_PROJECT_DIR/$IMAGE"  # Docker 이미지 빌드
+        ./twistcli images scan \
+          --docker-address unix:///var/run/docker.sock \
+          --address "$PCC_CONSOLE_URL" \
+          --user "$PCC_USER" \
+          --password "$PCC_PASS" \
+          --details "$IMAGE_NAME"  # Twistcli로 이미지 스캔
+      done
