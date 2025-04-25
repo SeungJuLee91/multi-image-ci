@@ -15,6 +15,7 @@ pipeline {
                 ]) {
                     script {
                         sh '''
+                            echo "🔐 AUTH TEST - $PCC_USER @ $PCC_CONSOLE_URL"
                             BASIC_AUTH=$(echo -n "$PCC_USER:$PCC_PASS" | base64 | tr -d '\n')
                             wget --no-check-certificate --header "Authorization: Basic $BASIC_AUTH" "$PCC_CONSOLE_URL/api/v1/util/twistcli"
                             chmod a+x ./twistcli
@@ -23,11 +24,13 @@ pipeline {
                                 TAG="custom-${IMAGE}:${BUILD_ID}"
                                 docker build -t "$TAG" "$WORKSPACE/$IMAGE"
 
+                                echo "🔎 Scanning image: $TAG"
                                 ./twistcli images scan \
                                     --docker-address unix:///var/run/docker.sock \
                                     --address "$PCC_CONSOLE_URL" \
                                     --user "$PCC_USER" \
                                     --password "$PCC_PASS" \
+                                    --details \
                                     "$TAG"
                             done
                         '''
