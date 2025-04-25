@@ -21,7 +21,7 @@ pipeline {
                         sh "docker build -t ${tag} ${context}"
                         // Prisma Cloud 이미지 보안 스캔 수행
 
-                        prismaCloudScanImage(
+                        prismaCloudScanImage( 
                             //스캔 이미지
                             image: tag,
                             //도커 데몬 주소 지정
