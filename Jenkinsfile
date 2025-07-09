@@ -7,7 +7,7 @@ pipeline {
         IMAGE_LIST = "nginx node python alpine"
     }
 
-    stages {
+    stages { 
         stage('Build & Scan Images') {
             steps {
                 script {
