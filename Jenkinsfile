@@ -34,7 +34,7 @@ pipeline {
                         //저장 파일 내용 게시
                          sh "cat prisma-cloud-scan-results.json"
                     }
-                }
+                } 
             }
         }
     }
