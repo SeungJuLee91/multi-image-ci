@@ -15,7 +15,7 @@ pipeline {
                 ]) {
                     script {
                         sh '''
-                            echo "🔐 AUTH TEST - $PCC_USER @ $PCC_CONSOLE_URL"
+                            echo " AUTH TEST - $PCC_USER @ $PCC_CONSOLE_URL"
                             BASIC_AUTH=$(echo -n "$PCC_USER:$PCC_PASS" | base64 | tr -d '\n')
                             wget --no-check-certificate --header "Authorization: Basic $BASIC_AUTH" "$PCC_CONSOLE_URL/api/v1/util/twistcli"
                             chmod a+x ./twistcli
