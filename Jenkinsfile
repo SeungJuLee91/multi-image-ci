@@ -22,7 +22,7 @@ pipeline {
                         // Prisma Cloud 이미지 보안 스캔 수행
 
                         prismaCloudScanImage( 
-                            //스캔 이미지
+                            //스캔할 대상 이미지 (예: 'myapp:latest')
                             image: tag,
                             //도커 데몬 주소 지정
                             dockerAddress: 'unix:///var/run/docker.sock',
