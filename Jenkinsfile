@@ -26,10 +26,12 @@ pipeline {
                             image: tag,
                             //도커 데몬 주소 지정
                             dockerAddress: 'unix:///var/run/docker.sock',
-                            //이미지 수정 시간과 상관없이 항상 스캔하기위한 옵션
+                            // 이미지의 생성 시간과 관계없이 항상 스캔을 수행하도록 설정
                             ignoreImageBuildTime: true,
-                            //파일로 저장
-                            resultsFile: 'prisma-cloud-scan-results.json'
+                            // 스캔 결과를 저장할 파일 경로
+                            resultsFile: 'prisma-cloud-scan-results.json',
+                            // 로그 출력 수준 설정 (error, warn, info, debug, trace 중 선택 가능, 기본값은 info)
+                            logLevel: 'info'
                         )
                         //저장 파일 내용 게시
                          sh "cat prisma-cloud-scan-results.json"
