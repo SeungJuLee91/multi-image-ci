@@ -2,29 +2,23 @@ pipeline {
   agent any
 
   stages {
-    stage('Prisma Cloud Scan') {
+    stage('Prisma Cloud Scan (Function ZIP)') {
       steps {
-        script {
-          // 원본 이미지: 전체 태그 포함
-          def fullImage = 'nvidia/cuda:12.2.0-devel-ubuntu22.04'
+        // ZIP 존재 여부 확인 (없으면 빌드 실패)
+        sh 'test -f lambda_deployment.zip || { echo "ZIP not found: lambda_deployment.zip"; exit 2; }'
 
-          // 커스텀 태그 생성
-          def tag = "nvidia/cuda:${env.BUILD_ID}"
+        // 스니펫 생성기에서 나온 함수 스캔 스텝 (경로/이름만 맞춰주세요)
+        prismaCloudScanFunction(
+          cloudFormationTemplateFile: '',
+          functionName: 'lambda_deployment',
+          functionPath: 'lambda_deployment.zip',
+          logLevel: 'info',
+          project: '',
+          resultsFile: 'prisma-function-scan-results.json'
+        )
 
-          // 이미지에 커스텀 태그 부여
-          sh "docker tag ${fullImage} ${tag}"
-
-          // Prisma Cloud 이미지 스캔
-          prismaCloudScanImage(  
-            image: tag,                                     //스캔할 대상 이미지 (예: 'myapp:latest')
-            dockerAddress: 'unix:///var/run/docker.sock',   // Docker 데몬 소켓 주소 (로컬 Docker 엔진과 통신하기 위한 기본 경로)
-            ignoreImageBuildTime: true,                     // 이미지의 생성 시간과 관계없이 항상 스캔을 수행하도록 설정
-            resultsFile: 'prisma-cloud-scan-results.json',  // 스캔 결과를 저장할 파일 경로 (JSON 형식, Jenkins 작업 디렉토리에 생성됨)
-            logLevel: 'info'                       // 로그 출력 수준 설정 (error, warn, info, debug, trace 중 선택 가능, 기본값은 info)
-          )
-          // 스캔 완료 후 이미지 삭제
-          sh "docker rmi -f ${tag} || true"
-        }
+        // (선택) 결과 파일 보관
+        // archiveArtifacts artifacts: 'prisma-function-scan-results.json', onlyIfSuccessful: false
       }
     }
   }
